@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/api"
 )
 
 func handler(writer http.ResponseWriter, request *http.Request) {
@@ -13,5 +15,7 @@ func handler(writer http.ResponseWriter, request *http.Request) {
 func main() {
 	fmt.Println("Starting the app")
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/api/login", api.LoginHandler)
+	http.HandleFunc("/api/refresh", api.RefreshHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
