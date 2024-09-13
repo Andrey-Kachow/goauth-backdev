@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const anotherSampleUserGUID string = "67890"
@@ -27,7 +28,7 @@ func (mockDB *MockTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (strin
 	if mockDB.ShouldError {
 		return "", errors.New("Database read error")
 	}
-	return "sample db data", nil
+	return mockDB.MockHashedToken, nil
 }
 
 // TestGenerateRefreshToken tests that GenerateRefreshToken generates a valid refresh token
@@ -63,4 +64,36 @@ func TestGenerateRefreshToken(t *testing.T) {
 	expectedExpiration := time.Now().Add(RefreshKeyExpirationDuration)
 
 	assert.WithinDuration(t, expectedExpiration, expirationTime, time.Minute, "Expected expiration to match")
+}
+
+func TestValidateRefreshTokenAndPassword(t *testing.T) {
+	refreshToken, _, _ := GenerateRefreshToken(anotherSampleUserGUID)
+	password := createPasswordFromRefreshToken(refreshToken)
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	mockDB := &MockTokenDB{
+		MockHashedToken: string(hashedPassword),
+		ShouldError:     false,
+	}
+
+	returnedGUID, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
+	assert.NoError(t, err)
+	assert.Equal(t, anotherSampleUserGUID, returnedGUID, "Expected GUID to match")
+}
+
+func TestValidateRefreshTokenAndPassword_DBError(t *testing.T) {
+	// Step 1: Generate a valid refresh token
+	refreshToken, _, err := GenerateRefreshToken(anotherSampleUserGUID)
+	assert.NoError(t, err)
+
+	// Step 2: Simulate a database error
+	mockDB := &MockTokenDB{
+		ShouldError: true, // Simulate a database error
+	}
+
+	// Step 3: Call ValidateRefreshTokenAndPassword with the mock database
+	returnedGUID, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
+	assert.Error(t, err, "Expected an error due to database failure")
+	assert.Empty(t, returnedGUID, "Expected no GUID to be returned")
 }

@@ -46,7 +46,7 @@ func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (s
 	token, err := jwt.Parse(
 		refreshToken,
 		func(token *jwt.Token) (interface{}, error) {
-			return RefreshSecretKey, nil
+			return []byte(RefreshSecretKey), nil
 		},
 	)
 	if err != nil {
