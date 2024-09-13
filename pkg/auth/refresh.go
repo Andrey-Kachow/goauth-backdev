@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,10 +17,12 @@ func GenerateRefreshToken(userGUID string) (string, string, error) {
 		"exp":  time.Now().Add(RefreshKeyExpirationDuration).Unix(),
 	})
 
-	refreshTokenString, err := refreshToken.SignedString(RefreshSecretKey)
+	refreshTokenString, err := refreshToken.SignedString([]byte(RefreshSecretKey))
 	if err != nil {
 		return "", "", err
 	}
+
+	fmt.Println("length is " + fmt.Sprint(len(refreshTokenString)))
 
 	hashedRefreshToken, err := bcrypt.GenerateFromPassword([]byte(refreshTokenString), bcrypt.DefaultCost)
 	if err != nil {
