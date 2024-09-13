@@ -88,6 +88,7 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	err = auth.ValidateRefreshTokenAndPassword(refreshToken)
 	err = bcrypt.CompareHashAndPassword([]byte(hashedTokenFromDB), []byte(refreshToken))
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
