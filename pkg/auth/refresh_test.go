@@ -38,7 +38,7 @@ func TestGenerateRefreshToken(t *testing.T) {
 
 	assert.Equal(t, anotherSampleUserGUID, claims["guid"], "Expected GUID to match")
 
-	exp := int64(claims["exp"].(float64)) // JWT encodes numeric claims as float64
+	exp := int64(claims["exp"].(float64))
 	expirationTime := time.Unix(exp, 0)
 	expectedExpiration := time.Now().Add(RefreshKeyExpirationDuration)
 

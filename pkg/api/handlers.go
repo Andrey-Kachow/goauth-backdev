@@ -6,7 +6,6 @@ import (
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/auth"
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type loginRequestBody struct {
@@ -76,20 +75,7 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	refreshToken := requestBody.RefreshToken
 
-	claims, err := auth.ValidateRefreshToken(refreshToken)
-	if exitWithError(err, http.StatusUnauthorized, writer) {
-		return
-	}
-
-	userGUID := claims["guid"].(string)
-	hashedTokenFromDB, err := db.FetchHashedRefreshTokenFromDB(userGUID)
-
-	if exitWithError(err, http.StatusInternalServerError, writer) {
-		return
-	}
-
-	err = auth.ValidateRefreshTokenAndPassword(refreshToken)
-	err = bcrypt.CompareHashAndPassword([]byte(hashedTokenFromDB), []byte(refreshToken))
+	userGUID, err = auth.ValidateRefreshTokenAndPassword(refreshToken)
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}
