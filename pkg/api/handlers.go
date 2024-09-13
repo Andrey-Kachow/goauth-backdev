@@ -6,9 +6,11 @@ import (
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/auth"
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/msg"
 )
 
-var TokenDatabase = &db.PostgreSQLTokenDB{}
+var tokenDatabase = &db.PostgreSQLTokenDB{}
+var emailNotificationService = &msg.EmailNotificationService{}
 
 type loginRequestBody struct {
 	GUID string `json:"guid"`
@@ -41,12 +43,16 @@ func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 	if exitWithError(err, http.StatusBadRequest, writer) {
 		return
 	}
-	userGUID := requestBody.GUID
 
-	accessToken, refreshToken, err := auth.GeneratePair(userGUID, TokenDatabase)
-	if exitWithError(err, http.StatusInternalServerError, writer) {
+	userGUID := requestBody.GUID
+	clientIP := request.RemoteAddr
+
+	accessToken, refreshToken, err := auth.GeneratePair(userGUID, clientIP, tokenDatabase)
+	if exitWithError(err, http.StatusBadRequest, writer) {
 		return
 	}
+
+	auth.ValidateAccessTokenClaims(accessToken, clientIP, emailNotificationService)
 
 	json.NewEncoder(writer).Encode(map[string]string{
 		"access_token":  accessToken,
@@ -67,12 +73,12 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	refreshToken := requestBody.RefreshToken
 
-	userGUID, err := auth.ValidateRefreshTokenAndPassword(refreshToken, TokenDatabase)
+	userGUID, err := auth.ValidateRefreshTokenAndPassword(refreshToken, tokenDatabase)
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}
 
-	newAccessToken, err := auth.GenerateAccessToken(userGUID)
+	newAccessToken, err := auth.GenerateAccessToken(userGUID, request.RemoteAddr)
 	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}

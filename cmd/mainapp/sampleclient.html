@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Website</title>
+  </head>
+  <body>
+    <h1>Welcome to the Test client</h1>
+      <p id="access-token"></p>
+      <p id="refresh-token"></p>
+      <label>GUID: </label><input id="guid" type="text">
+      <label>Email: </label><input id="email" type="text">
+      <button onclick="accessButtonClick()">Access</button>
+      <button onclick="refreshButtonClick()">Refresh</button>
+    </form>
+  </body>
+  <script>
+    let refreshToken = ""
+    let accessToken = ""
+
+    function updateText() {
+      document.getElementById("access-token").textContent = "Access Token: " + accessToken
+      document.getElementById("refresh-token").textContent = "Refresh Token: " + accessToken
+    }
+
+    async function accessButtonClick() {
+      const guid = document.getElementById("guid").textContent
+      const email = document.getElementById("email").textContent
+      response = await ("/api/access", {
+        method: "POST",
+        body: JSON.stringify({
+          guid: guid,
+          email: email
+        })
+      })
+      json = await response.json
+      refreshToken = json["refresh_token"]
+      accessToken = json["access_token"]
+      updateText()
+    }
+  </script>
+</html>

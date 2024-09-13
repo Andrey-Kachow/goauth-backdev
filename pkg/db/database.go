@@ -1,10 +1,14 @@
 package db
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type TokenDB interface {
 	SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error
 	FetchHashedRefreshTokenFromDB(userGUID string) (string, error)
+	GetEmailAddressFromGUID(userGUID string) (string, error)
 }
 
 type PostgreSQLTokenDB struct {
@@ -18,4 +22,8 @@ func (tdb *PostgreSQLTokenDB) SaveHashedRefreshToken(userGUID string, refreshTok
 func (tdb *PostgreSQLTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (string, error) {
 	fmt.Printf("DB: A hashed refresh token of user %s has been accessed", userGUID)
 	return "sample db data", nil
+}
+
+func (tdb *PostgreSQLTokenDB) GetEmailAddressFromGUID(userGUID string) (string, error) {
+	return os.Getenv("GOAUTH_BACKDEV_EMAIL_USERNAME"), nil
 }

@@ -34,6 +34,10 @@ func (mockDB *MockTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (strin
 	return mockDB.SavedHashedTokenHash, nil
 }
 
+func (mockDB *MockTokenDB) GetEmailAddressFromGUID(userGUID string) (string, error) {
+	return "", nil
+}
+
 // TestGenerateRefreshToken tests that GenerateRefreshToken generates a valid refresh token
 func TestGenerateRefreshToken(t *testing.T) {
 
