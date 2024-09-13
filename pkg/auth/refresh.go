@@ -42,7 +42,7 @@ func GenerateRefreshToken(userGUID string) (string, string, error) {
 	return refreshTokenString, string(hashedRefreshToken), nil
 }
 
-func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB *db.TokenDB) (string, error) {
+func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (string, error) {
 	token, err := jwt.Parse(
 		refreshToken,
 		func(token *jwt.Token) (interface{}, error) {
