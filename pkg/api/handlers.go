@@ -8,6 +8,8 @@ import (
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
 )
 
+var TokenDatabase = &db.PostgreSQLTokenDB{}
+
 type loginRequestBody struct {
 	GUID string `json:"guid"`
 }
@@ -41,17 +43,7 @@ func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	userGUID := requestBody.GUID
 
-	accessToken, err := auth.GenerateAccessToken(userGUID)
-	if exitWithError(err, http.StatusBadRequest, writer) {
-		return
-	}
-
-	refreshToken, hashedRefreshToken, err := auth.GenerateRefreshToken(userGUID)
-	if exitWithError(err, http.StatusBadRequest, writer) {
-		return
-	}
-
-	err = db.SaveHashedRefreshToken(userGUID, hashedRefreshToken)
+	accessToken, refreshToken, err := auth.GeneratePair(userGUID, TokenDatabase)
 	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}
@@ -75,7 +67,7 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	refreshToken := requestBody.RefreshToken
 
-	userGUID, err = auth.ValidateRefreshTokenAndPassword(refreshToken)
+	userGUID, err := auth.ValidateRefreshTokenAndPassword(refreshToken, TokenDatabase)
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}

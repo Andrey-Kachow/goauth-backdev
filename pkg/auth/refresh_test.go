@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -9,6 +10,25 @@ import (
 )
 
 const anotherSampleUserGUID string = "67890"
+
+type MockTokenDB struct {
+	MockHashedToken string
+	ShouldError     bool
+}
+
+func (mockDB *MockTokenDB) SaveHashedRefreshToken(userGUID string, token string) error {
+	if mockDB.ShouldError {
+		return errors.New("Database write error")
+	}
+	return nil
+}
+
+func (mockDB *MockTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (string, error) {
+	if mockDB.ShouldError {
+		return "", errors.New("Database read error")
+	}
+	return "sample db data", nil
+}
 
 // TestGenerateRefreshToken tests that GenerateRefreshToken generates a valid refresh token
 func TestGenerateRefreshToken(t *testing.T) {

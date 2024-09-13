@@ -42,7 +42,7 @@ func GenerateRefreshToken(userGUID string) (string, string, error) {
 	return refreshTokenString, string(hashedRefreshToken), nil
 }
 
-func ValidateRefreshTokenAndPassword(refreshToken string) (string, error) {
+func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB *db.TokenDB) (string, error) {
 	token, err := jwt.Parse(
 		refreshToken,
 		func(token *jwt.Token) (interface{}, error) {
@@ -59,7 +59,7 @@ func ValidateRefreshTokenAndPassword(refreshToken string) (string, error) {
 	}
 
 	userGUID := claims["guid"].(string)
-	hashedTokenFromDB, err := db.FetchHashedRefreshTokenFromDB(userGUID)
+	hashedTokenFromDB, err := tokenDB.FetchHashedRefreshTokenFromDB(userGUID)
 	if err != nil {
 		return "", err
 	}
