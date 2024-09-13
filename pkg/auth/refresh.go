@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,7 +21,6 @@ func GenerateRefreshToken(userGUID string) (string, string, error) {
 		return "", "", err
 	}
 
-	// Hash the refresh token before storing in DB
 	hashedRefreshToken, err := bcrypt.GenerateFromPassword([]byte(refreshTokenString), bcrypt.DefaultCost)
 	if err != nil {
 		return "", "", err
@@ -31,34 +29,20 @@ func GenerateRefreshToken(userGUID string) (string, string, error) {
 	return refreshTokenString, string(hashedRefreshToken), nil
 }
 
-func ValidateToken(token string) (map[string]interface{}, error) {
-	// Validate the token signature and expiration
-	return nil, nil
-}
-
-// Refresh Access Token
-func refreshAccessToken(refreshToken string, hashedTokenFromDB string) (string, error) {
-	// Validate the refresh token
-	err := bcrypt.CompareHashAndPassword([]byte(hashedTokenFromDB), []byte(refreshToken))
+func ValidateRefreshToken(refreshToken string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(
+		refreshToken,
+		func(token *jwt.Token) (interface{}, error) {
+			return RefreshSecretKey, nil
+		},
+	)
 	if err != nil {
-		return "", fmt.Errorf("invalid refresh token")
+		return nil, err
 	}
 
-	// Parse the refresh token to extract claims (like the user's GUID)
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		return RefreshSecretKey, nil
-	})
-
-	if err != nil {
-		return "", err
+	claims, isOK := token.Claims.(jwt.MapClaims)
+	if !(isOK || token.Valid) {
+		return nil, err
 	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userGUID := claims["guid"].(string)
-
-		// Generate a new access token
-		return GenerateAccessToken(userGUID)
-	}
-
-	return "", fmt.Errorf("invalid refresh token")
+	return claims, nil
 }

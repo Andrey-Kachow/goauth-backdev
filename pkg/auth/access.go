@@ -11,9 +11,9 @@ const AccessSecretKey = "accessSecretKey"
 const AccessTokenExiparionInMinutes = 15
 
 func GenerateAccessToken(userGUID string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
 		"guid": userGUID,
-		"exp":  time.Now().Add(time.Minute * AccessTokenExiparionInMinutes).Unix(), // Access token valid for 15 minutes
+		"exp":  time.Now().Add(time.Minute * AccessTokenExiparionInMinutes).Unix(),
 	})
-	return token.SignedString(AccessSecretKey)
+	return token.SignedString([]byte(AccessSecretKey))
 }

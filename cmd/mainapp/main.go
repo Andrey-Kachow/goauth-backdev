@@ -15,7 +15,7 @@ func handler(writer http.ResponseWriter, request *http.Request) {
 func main() {
 	fmt.Println("Starting the app")
 	http.HandleFunc("/", handler)
-	http.HandleFunc("/api/login", api.LoginHandler)
+	http.HandleFunc("/api/login", api.AccessHandler)
 	http.HandleFunc("/api/refresh", api.RefreshHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

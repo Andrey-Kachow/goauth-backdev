@@ -21,7 +21,7 @@ func sendErrorText(writer http.ResponseWriter, status int) {
 	http.Error(writer, http.StatusText(status), status)
 }
 
-func exitWith(err error, status int, writer http.ResponseWriter) bool {
+func exitWithError(err error, status int, writer http.ResponseWriter) bool {
 	if err != nil {
 		sendErrorText(writer, status)
 		return true
@@ -29,28 +29,31 @@ func exitWith(err error, status int, writer http.ResponseWriter) bool {
 	return false
 }
 
-func LoginHandler(writer http.ResponseWriter, request *http.Request) {
+func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		sendErrorText(writer, http.StatusMethodNotAllowed)
 		return
 	}
 
 	var requestBody loginRequestBody
-	json.NewDecoder(request.Body).Decode(&requestBody)
+	err := json.NewDecoder(request.Body).Decode(&requestBody)
+	if exitWithError(err, http.StatusBadRequest, writer) {
+		return
+	}
 	userGUID := requestBody.GUID
 
-	accessToken, err := auth.GenerateAccessToken(userGUID) // 15 minute expiration
-	if exitWith(err, http.StatusBadRequest, writer) {
+	accessToken, err := auth.GenerateAccessToken(userGUID)
+	if exitWithError(err, http.StatusBadRequest, writer) {
 		return
 	}
 
-	refreshToken, hashedRefreshToken, err := auth.GenerateRefreshToken(userGUID) // 7 day expiration
-	if exitWith(err, http.StatusBadRequest, writer) {
+	refreshToken, hashedRefreshToken, err := auth.GenerateRefreshToken(userGUID)
+	if exitWithError(err, http.StatusBadRequest, writer) {
 		return
 	}
 
 	err = db.SaveHashedRefreshToken(userGUID, hashedRefreshToken)
-	if exitWith(err, http.StatusInternalServerError, writer) {
+	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}
 
@@ -67,28 +70,31 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	var requestBody refreshRequestBody
-	json.NewDecoder(request.Body).Decode(&requestBody)
+	err := json.NewDecoder(request.Body).Decode(&requestBody)
+	if exitWithError(err, http.StatusBadRequest, writer) {
+		return
+	}
 	refreshToken := requestBody.RefreshToken
 
-	claims, err := auth.ValidateToken(refreshToken)
-	if exitWith(err, http.StatusUnauthorized, writer) {
+	claims, err := auth.ValidateRefreshToken(refreshToken)
+	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}
 
 	userGUID := claims["guid"].(string)
 	hashedTokenFromDB, err := db.FetchHashedRefreshTokenFromDB(userGUID)
 
-	if exitWith(err, http.StatusInternalServerError, writer) {
+	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedTokenFromDB), []byte(refreshToken))
-	if exitWith(err, http.StatusUnauthorized, writer) {
+	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}
 
-	newAccessToken, err := auth.GenerateAccessToken(userGUID) // 15 minute expiration
-	if exitWith(err, http.StatusInternalServerError, writer) {
+	newAccessToken, err := auth.GenerateAccessToken(userGUID)
+	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}
 
