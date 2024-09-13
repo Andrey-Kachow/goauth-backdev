@@ -13,14 +13,17 @@ import (
 const anotherSampleUserGUID string = "67890"
 
 type MockTokenDB struct {
-	MockHashedToken string
-	ShouldError     bool
+	SavedUserGUID        string
+	SavedHashedTokenHash string
+	ShouldError          bool
 }
 
-func (mockDB *MockTokenDB) SaveHashedRefreshToken(userGUID string, token string) error {
+func (mockDB *MockTokenDB) SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error {
 	if mockDB.ShouldError {
 		return errors.New("Database write error")
 	}
+	mockDB.SavedUserGUID = userGUID
+	mockDB.SavedHashedTokenHash = refreshTokenHash
 	return nil
 }
 
@@ -28,7 +31,7 @@ func (mockDB *MockTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (strin
 	if mockDB.ShouldError {
 		return "", errors.New("Database read error")
 	}
-	return mockDB.MockHashedToken, nil
+	return mockDB.SavedHashedTokenHash, nil
 }
 
 // TestGenerateRefreshToken tests that GenerateRefreshToken generates a valid refresh token
@@ -73,8 +76,8 @@ func TestValidateRefreshTokenAndPassword(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	mockDB := &MockTokenDB{
-		MockHashedToken: string(hashedPassword),
-		ShouldError:     false,
+		SavedHashedTokenHash: string(hashedPassword),
+		ShouldError:          false,
 	}
 
 	returnedGUID, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
@@ -83,16 +86,13 @@ func TestValidateRefreshTokenAndPassword(t *testing.T) {
 }
 
 func TestValidateRefreshTokenAndPassword_DBError(t *testing.T) {
-	// Step 1: Generate a valid refresh token
 	refreshToken, _, err := GenerateRefreshToken(anotherSampleUserGUID)
 	assert.NoError(t, err)
 
-	// Step 2: Simulate a database error
 	mockDB := &MockTokenDB{
 		ShouldError: true, // Simulate a database error
 	}
 
-	// Step 3: Call ValidateRefreshTokenAndPassword with the mock database
 	returnedGUID, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
 	assert.Error(t, err, "Expected an error due to database failure")
 	assert.Empty(t, returnedGUID, "Expected no GUID to be returned")

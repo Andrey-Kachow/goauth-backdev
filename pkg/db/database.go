@@ -3,15 +3,15 @@ package db
 import "fmt"
 
 type TokenDB interface {
-	SaveHashedRefreshToken(userGUID string, token string) error
+	SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error
 	FetchHashedRefreshTokenFromDB(userGUID string) (string, error)
 }
 
 type PostgreSQLTokenDB struct {
 }
 
-func (tdb *PostgreSQLTokenDB) SaveHashedRefreshToken(userGUID string, token string) error {
-	fmt.Printf("DB: Saved %s token to database for user %s", token, userGUID)
+func (tdb *PostgreSQLTokenDB) SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error {
+	fmt.Printf("DB: Saved %s token to database for user %s", refreshTokenHash, userGUID)
 	return nil
 }
 
