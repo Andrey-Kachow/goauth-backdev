@@ -6,7 +6,7 @@ import (
 )
 
 type TokenDB interface {
-	SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error
+	SaveUserData(userGUID string, userEmail string, refreshTokenHash string) error
 	FetchHashedRefreshTokenFromDB(userGUID string) (string, error)
 	GetEmailAddressFromGUID(userGUID string) (string, error)
 }
@@ -18,7 +18,7 @@ func ProvideApplicationTokenDB() TokenDB {
 type PostgreSQLTokenDB struct {
 }
 
-func (tdb *PostgreSQLTokenDB) SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error {
+func (tdb *PostgreSQLTokenDB) SaveUserData(userGUID string, userEmail string, refreshTokenHash string) error {
 	fmt.Printf("DB: Saved %s token to database for user %s", refreshTokenHash, userGUID)
 	return nil
 }

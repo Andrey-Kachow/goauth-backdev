@@ -13,7 +13,8 @@ var tokenDatabase = db.ProvideApplicationTokenDB()
 var emailNotificationService = &msg.EmailNotificationService{}
 
 type loginRequestBody struct {
-	GUID string `json:"guid"`
+	GUID  string `json:"guid"`
+	Email string `json:"email"`
 }
 
 type refreshRequestBody struct {
@@ -45,14 +46,18 @@ func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	userGUID := requestBody.GUID
+	userEmail := requestBody.Email
 	clientIP := request.RemoteAddr
 
-	accessToken, refreshToken, err := auth.GeneratePair(userGUID, clientIP, tokenDatabase)
+	accessToken, refreshToken, err := auth.GeneratePair(userGUID, clientIP, userEmail, tokenDatabase)
 	if exitWithError(err, http.StatusBadRequest, writer) {
 		return
 	}
 
-	auth.ValidateAccessTokenClaims(accessToken, clientIP, emailNotificationService)
+	_, _, err = auth.ValidateAccessTokenClaims(accessToken, clientIP, userEmail, emailNotificationService)
+	if exitWithError(err, http.StatusUnauthorized, writer) {
+		return
+	}
 
 	json.NewEncoder(writer).Encode(map[string]string{
 		"access_token":  accessToken,
@@ -73,12 +78,12 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	refreshToken := requestBody.RefreshToken
 
-	userGUID, err := auth.ValidateRefreshTokenAndPassword(refreshToken, tokenDatabase)
+	userGUID, userEmail, err := auth.ValidateRefreshTokenAndPassword(refreshToken, tokenDatabase)
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}
 
-	newAccessToken, err := auth.GenerateAccessToken(userGUID, request.RemoteAddr)
+	newAccessToken, err := auth.GenerateAccessToken(userGUID, request.RemoteAddr, userEmail)
 	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}

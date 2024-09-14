@@ -7,23 +7,26 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const anotherSampleUserGUID string = "67890"
+const anotherSampleClientIP string = "192.168.1.1"
+const anotherSampleUserEmail string = "sample@example.com"
 
 type MockTokenDB struct {
 	SavedUserGUID        string
 	SavedHashedTokenHash string
+	SavedEmail           string
 	ShouldError          bool
 }
 
-func (mockDB *MockTokenDB) SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error {
+func (mockDB *MockTokenDB) SaveUserData(userGUID string, userEmail string, refreshTokenHash string) error {
 	if mockDB.ShouldError {
 		return errors.New("Database write error")
 	}
 	mockDB.SavedUserGUID = userGUID
 	mockDB.SavedHashedTokenHash = refreshTokenHash
+	mockDB.SavedEmail = userEmail
 	return nil
 }
 
@@ -41,7 +44,7 @@ func (mockDB *MockTokenDB) GetEmailAddressFromGUID(userGUID string) (string, err
 // TestGenerateRefreshToken tests that GenerateRefreshToken generates a valid refresh token
 func TestGenerateRefreshToken(t *testing.T) {
 
-	refreshTokenString, hashedRefreshToken, err := GenerateRefreshToken(anotherSampleUserGUID)
+	refreshTokenString, hashedRefreshToken, err := GenerateRefreshToken(anotherSampleUserGUID, anotherSampleUserEmail)
 
 	assert.NoError(t, err, "Expected no error generating the refresh token")
 	assert.NotEmpty(t, refreshTokenString, "Expected a non-empty refresh token string")
@@ -74,30 +77,29 @@ func TestGenerateRefreshToken(t *testing.T) {
 }
 
 func TestValidateRefreshTokenAndPassword(t *testing.T) {
-	refreshToken, _, _ := GenerateRefreshToken(anotherSampleUserGUID)
-	password := createPasswordFromRefreshToken(refreshToken)
-
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-
 	mockDB := &MockTokenDB{
-		SavedHashedTokenHash: string(hashedPassword),
-		ShouldError:          false,
+		ShouldError: false, // Simulate a database error
 	}
 
-	returnedGUID, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
+	_, refreshToken, err := GeneratePair(anotherSampleUserGUID, anotherSampleClientIP, anotherSampleUserEmail, mockDB)
+	assert.NoError(t, err)
+
+	returnedGUID, returnedEmail, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
 	assert.NoError(t, err)
 	assert.Equal(t, anotherSampleUserGUID, returnedGUID, "Expected GUID to match")
+	assert.Equal(t, anotherSampleUserEmail, returnedEmail, "Expected email to match")
 }
 
 func TestValidateRefreshTokenAndPassword_DBError(t *testing.T) {
-	refreshToken, _, err := GenerateRefreshToken(anotherSampleUserGUID)
+	refreshToken, _, err := GenerateRefreshToken(anotherSampleUserGUID, anotherSampleUserEmail)
 	assert.NoError(t, err)
 
 	mockDB := &MockTokenDB{
 		ShouldError: true, // Simulate a database error
 	}
 
-	returnedGUID, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
+	returnedGUID, returnedEmail, err := ValidateRefreshTokenAndPassword(refreshToken, mockDB)
 	assert.Error(t, err, "Expected an error due to database failure")
 	assert.Empty(t, returnedGUID, "Expected no GUID to be returned")
+	assert.Empty(t, returnedEmail, "Expected no email to be returned")
 }

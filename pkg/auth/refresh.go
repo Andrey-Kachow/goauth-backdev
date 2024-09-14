@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"time"
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
@@ -21,10 +22,11 @@ func createPasswordFromRefreshToken(inputString string) string {
 	return hex.EncodeToString(hashedRefreshTokenBytes)
 }
 
-func GenerateRefreshToken(userGUID string) (string, string, error) {
+func GenerateRefreshToken(userGUID string, userEmail string) (string, string, error) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"guid": userGUID,
-		"exp":  time.Now().Add(RefreshKeyExpirationDuration).Unix(),
+		"guid":  userGUID,
+		"email": userEmail,
+		"exp":   time.Now().Add(RefreshKeyExpirationDuration).Unix(),
 	})
 
 	refreshTokenString, err := refreshToken.SignedString([]byte(RefreshSecretKey))
@@ -42,7 +44,8 @@ func GenerateRefreshToken(userGUID string) (string, string, error) {
 	return refreshTokenString, string(hashedRefreshToken), nil
 }
 
-func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (string, error) {
+// ValidateRefreshTokenAndPassword returns validated userGUID and email
+func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (string, string, error) {
 	token, err := jwt.Parse(
 		refreshToken,
 		func(token *jwt.Token) (interface{}, error) {
@@ -50,26 +53,35 @@ func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (s
 		},
 	)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	claims, isOK := token.Claims.(jwt.MapClaims)
 	if !(isOK || token.Valid) {
-		return "", err
+		return "", "", err
 	}
 
-	userGUID := claims["guid"].(string)
+	userGUID, ok := claims["guid"].(string)
+	if !ok {
+		return "", "", errors.New("user GUID not found in the refresh token")
+	}
+
+	userEmail, ok := claims["email"].(string)
+	if !ok {
+		return "", "", errors.New("user email not found in the refresh token")
+	}
+
 	hashedTokenFromDB, err := tokenDB.FetchHashedRefreshTokenFromDB(userGUID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	passwordFromRefreshToken := createPasswordFromRefreshToken(refreshToken)
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedTokenFromDB), []byte(passwordFromRefreshToken))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return userGUID, nil
+	return userGUID, userEmail, nil
 }
