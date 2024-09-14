@@ -9,7 +9,7 @@ import (
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/msg"
 )
 
-var tokenDatabase = &db.PostgreSQLTokenDB{}
+var tokenDatabase = db.ProvideApplicationTokenDB()
 var emailNotificationService = &msg.EmailNotificationService{}
 
 type loginRequestBody struct {

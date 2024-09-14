@@ -11,6 +11,10 @@ type TokenDB interface {
 	GetEmailAddressFromGUID(userGUID string) (string, error)
 }
 
+func ProvideApplicationTokenDB() TokenDB {
+	return &PostgreSQLTokenDB{}
+}
+
 type PostgreSQLTokenDB struct {
 }
 
