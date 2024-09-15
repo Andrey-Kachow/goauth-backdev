@@ -10,7 +10,7 @@ import (
 )
 
 var tokenDatabase = db.ProvideApplicationTokenDB()
-var emailNotificationService = &msg.EmailNotificationService{}
+var emailNotificationService = msg.ProvideNotificationService()
 
 type loginRequestBody struct {
 	GUID  string `json:"guid"`
