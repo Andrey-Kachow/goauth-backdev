@@ -1,27 +1,30 @@
 package db
 
-import (
-	"fmt"
-	"os"
-)
+import "fmt"
 
-type InMemoryTokenDB struct {
-	rows []struct {
-		guid  string
-		email string
-	}
+type userInfo struct {
+	GUID         string
+	Email        string
+	RefreshToken string
 }
 
-func (tdb *InMemoryTokenDB) SaveHashedRefreshToken(userGUID string, refreshTokenHash string) error {
-	fmt.Printf("DB: Saved %s token to database for user %s", refreshTokenHash, userGUID)
+type InMemoryTokenDB struct {
+	rows map[string]userInfo
+}
+
+func (tdb *InMemoryTokenDB) SaveUserData(userGUID string, userEmail string, refreshTokenHash string) error {
+	tdb.rows[userGUID] =
+		userInfo{
+			GUID:         userGUID,
+			Email:        userEmail,
+			RefreshToken: refreshTokenHash,
+		}
 	return nil
 }
 
 func (tdb *InMemoryTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (string, error) {
-	fmt.Printf("DB: A hashed refresh token of user %s has been accessed", userGUID)
-	return "sample db data", nil
-}
-
-func (tdb *InMemoryTokenDB) GetEmailAddressFromGUID(userGUID string) (string, error) {
-	return os.Getenv("GOAUTH_BACKDEV_EMAIL_USERNAME"), nil
+	if userInfo, exists := tdb.rows[userGUID]; exists {
+		return userInfo.RefreshToken, nil
+	}
+	return "", fmt.Errorf("user with GUID %s not found", userGUID)
 }
