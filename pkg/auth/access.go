@@ -75,7 +75,7 @@ func ValidateAccessTokenClaims(accessToken string, currentClientIP string, provi
 	}
 
 	if tokenClientIP != currentClientIP {
-		notificaitonService.SendWarning(userGUID, currentClientIP)
+		notificaitonService.SendWarning(userEmail, currentClientIP)
 	}
 	return userGUID, userEmail, nil
 }
