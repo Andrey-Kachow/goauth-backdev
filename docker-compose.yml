@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+      GOAUTH_BACKDEV_MODE: ${GOAUTH_BACKDEV_MODE}
+      GOAUTH_BACKDEV_SMTP_HOST: ${GOAUTH_BACKDEV_SMTP_HOST}
+      GOAUTH_BACKDEV_EMAIL_USERNAME: ${GOAUTH_BACKDEV_EMAIL_USERNAME}
+      GOAUTH_BACKDEV_EMAIL_PASSWORD: ${GOAUTH_BACKDEV_EMAIL_PASSWORD}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres-data:
