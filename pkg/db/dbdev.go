@@ -12,6 +12,12 @@ type InMemoryTokenDB struct {
 	rows map[string]userInfo
 }
 
+func CreateNewInMemoryTokenDB() TokenDB {
+	return &InMemoryTokenDB{
+		rows: make(map[string]userInfo),
+	}
+}
+
 func (tdb *InMemoryTokenDB) SaveUserData(userGUID string, userEmail string, refreshTokenHash string) error {
 	tdb.rows[userGUID] =
 		userInfo{

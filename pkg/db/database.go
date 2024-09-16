@@ -12,7 +12,7 @@ type TokenDB interface {
 
 func ProvideApplicationTokenDB() TokenDB {
 	if os.Getenv("GOAUTH_BACKDEV_MODE") == "development" {
-		return &InMemoryTokenDB{}
+		return CreateNewInMemoryTokenDB()
 	}
 	return &PostgreSQLTokenDB{}
 }
