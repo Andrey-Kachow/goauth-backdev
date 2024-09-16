@@ -38,6 +38,9 @@ func (mockDB *MockTokenDB) FetchUserData(userGUID string) (db.UserData, error) {
 		return db.UserData{}, errors.New("Database read error")
 	}
 	userDataRet := db.UserData{
+		GUID:             mockDB.SavedEmail,
+		Email:            mockDB.SavedEmail,
+		RecentIP:         mockDB.SavedIP,
 		RefreshTokenHash: mockDB.SavedHashedTokenHash,
 	}
 	return userDataRet, nil

@@ -81,8 +81,7 @@ func TestGeneratePair_IPChange(t *testing.T) {
 		SavedEmail:  sampleUserEmail,
 	}
 	mockNotificationService := &MockNotificationService{
-		EmailSent:     false,
-		SentUserEmail: "",
+		EmailSent: false,
 	}
 	MockAppContext.TokenDB = mockDB
 	MockAppContext.NotificationService = mockNotificationService
