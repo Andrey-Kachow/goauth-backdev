@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/auth"
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
@@ -33,6 +34,11 @@ func exitWithError(err error, status int, writer http.ResponseWriter) bool {
 	return false
 }
 
+func ipAddrFromRequest(request *http.Request) string {
+	ipAndPort := request.RemoteAddr
+	return strings.Split(ipAndPort, ":")[0]
+}
+
 func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		sendErrorText(writer, http.StatusMethodNotAllowed)
@@ -47,7 +53,7 @@ func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 
 	userGUID := requestBody.GUID
 	userEmail := requestBody.Email
-	clientIP := request.RemoteAddr
+	clientIP := ipAddrFromRequest(request)
 
 	accessToken, refreshToken, err := auth.GeneratePair(userGUID, clientIP, userEmail, tokenDatabase)
 	if exitWithError(err, http.StatusBadRequest, writer) {
@@ -83,7 +89,7 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	newAccessToken, err := auth.GenerateAccessToken(userGUID, request.RemoteAddr, userEmail)
+	newAccessToken, err := auth.GenerateAccessToken(userGUID, ipAddrFromRequest(request), userEmail)
 	if exitWithError(err, http.StatusInternalServerError, writer) {
 		return
 	}

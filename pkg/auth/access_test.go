@@ -15,14 +15,14 @@ const sampleUserEmail string = "name1@example.com"
 
 // Mock implementation of NotificationService
 type MockNotificationService struct {
-	EmailSent    bool
-	SentUserGUID string
-	SentClientIP string
+	EmailSent     bool
+	SentUserEmail string
+	SentClientIP  string
 }
 
-func (m *MockNotificationService) SendWarning(userGUID string, clientIP string) error {
+func (m *MockNotificationService) SendWarning(userEmail string, clientIP string) error {
 	m.EmailSent = true
-	m.SentUserGUID = userGUID
+	m.SentUserEmail = userEmail
 	m.SentClientIP = clientIP
 	return nil
 }
@@ -43,7 +43,7 @@ func TestValidateAccessTokenClaims_IPChange(t *testing.T) {
 	assert.Equal(t, sampleUserGUID, returnedGUID, "Expected GUID to match")
 
 	assert.True(t, mockNotificationService.EmailSent, "Expected email to be sent due to IP change")
-	assert.Equal(t, sampleUserGUID, mockNotificationService.SentUserGUID, "Expected email to be sent to the correct user")
+	assert.Equal(t, sampleUserEmail, mockNotificationService.SentUserEmail, "Expected email to be sent to the correct user")
 	assert.Equal(t, sampleNewClientIP, mockNotificationService.SentClientIP, "Expected email to contain the new client IP")
 }
 

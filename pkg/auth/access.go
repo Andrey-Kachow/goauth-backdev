@@ -74,6 +74,7 @@ func ValidateAccessTokenClaims(accessToken string, currentClientIP string, provi
 		return "", "", errors.New("client IP not found in token")
 	}
 
+	fmt.Printf("Comparing client IPs: %s and %s", tokenClientIP, currentClientIP)
 	if tokenClientIP != currentClientIP {
 		notificaitonService.SendWarning(userEmail, currentClientIP)
 	}
