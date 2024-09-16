@@ -33,8 +33,8 @@
       response = await fetch("/api/access", {
         method: "POST",
         body: JSON.stringify({
-          guid: guid,
-          email: email
+          "guid": guid,
+          "email": email
         })
       })
       if (response.ok) {
@@ -51,7 +51,7 @@
       response = await fetch("/api/refresh", {
         method: "POST",
         body: JSON.stringify({
-          refresh_token: refreshToken
+          "refresh_token": refreshToken
         })
       })
       if (response.ok) {

@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/auth"
@@ -31,8 +30,9 @@ func exitWithError(err error, status int, writer http.ResponseWriter) bool {
 }
 
 func ipAddrFromRequest(request *http.Request) string {
-	ipAndPort := request.RemoteAddr
-	return strings.Split(ipAndPort, ":")[0]
+	return request.RemoteAddr
+	// ipAndPort := request.RemoteAddr
+	// return strings.Split(ipAndPort, ":")[0]
 }
 
 func AccessHandler(writer http.ResponseWriter, request *http.Request) {

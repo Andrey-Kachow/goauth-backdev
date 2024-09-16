@@ -78,14 +78,19 @@ func TestGeneratePair_IPChange(t *testing.T) {
 	mockDB := &MockTokenDB{
 		ShouldError: false,
 		SavedIP:     sampleClientIP,
+		SavedEmail:  sampleUserEmail,
 	}
-	mockNotificationService := &MockNotificationService{}
+	mockNotificationService := &MockNotificationService{
+		EmailSent:     false,
+		SentUserEmail: "",
+	}
 	MockAppContext.TokenDB = mockDB
 	MockAppContext.NotificationService = mockNotificationService
 
 	accessToken, refreshToken, err := GeneratePair(sampleUserGUID, sampleNewClientIP, sampleUserEmail, MockAppContext)
 
 	assert.True(t, mockNotificationService.EmailSent)
+	assert.NotEmpty(t, mockNotificationService.SentUserEmail)
 
 	assert.NoError(t, err, "Expected no error from GeneratePair despite the new IP address")
 	assert.NotEmpty(t, accessToken, "Expected access token to be generated despite the new IP address")

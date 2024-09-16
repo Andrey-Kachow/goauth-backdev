@@ -17,9 +17,10 @@ const AccessTokenExiparionInMinutes = 15
 func GeneratePair(userGUID string, clientIP string, userEmail string, appContext app.ApplicationContext) (string, string, error) {
 	userData, err := appContext.TokenDB.FetchUserData(userGUID)
 	if err == nil {
-		fmt.Printf("Comparing client IPs: %s and %s", userData.RecentIP, clientIP)
+		fmt.Printf("Comparing client IPs: %s and %s\n", userData.RecentIP, clientIP)
 		if userData.RecentIP != clientIP {
-			appContext.NotificationService.SendWarning(userEmail, clientIP)
+			fmt.Printf("IP do not match: Notifying %s", userData.Email)
+			appContext.NotificationService.SendWarning(userData.Email, clientIP)
 		}
 	}
 

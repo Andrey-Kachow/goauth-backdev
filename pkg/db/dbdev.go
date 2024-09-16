@@ -13,13 +13,21 @@ func CreateNewInMemoryTokenDB() TokenDB {
 }
 
 func (tdb *InMemoryTokenDB) SaveUserData(userGUID string, userEmail string, clientIP string, refreshTokenHash string) error {
-	tdb.rows[userGUID] =
-		UserData{
-			GUID:             userGUID,
-			Email:            userEmail,
-			RecentIP:         clientIP,
-			RefreshTokenHash: refreshTokenHash,
-		}
+	userData, exists := tdb.rows[userGUID]
+	if exists {
+		fmt.Printf("User %s exists. Saving new token", userGUID)
+		userData.RefreshTokenHash = refreshTokenHash
+		tdb.rows[userGUID] = userData
+	} else {
+		fmt.Printf("Saving (%s, %s, %s, %s) to DB", userGUID, userEmail, clientIP, refreshTokenHash)
+		tdb.rows[userGUID] =
+			UserData{
+				GUID:             userGUID,
+				Email:            userEmail,
+				RecentIP:         clientIP,
+				RefreshTokenHash: refreshTokenHash,
+			}
+	}
 	return nil
 }
 
