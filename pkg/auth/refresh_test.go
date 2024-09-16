@@ -18,6 +18,7 @@ type MockTokenDB struct {
 	SavedUserGUID        string
 	SavedHashedTokenHash string
 	SavedEmail           string
+	SavedIP              string
 	ShouldError          bool
 }
 
@@ -28,6 +29,7 @@ func (mockDB *MockTokenDB) SaveUserData(userGUID string, userEmail string, clien
 	mockDB.SavedUserGUID = userGUID
 	mockDB.SavedHashedTokenHash = refreshTokenHash
 	mockDB.SavedEmail = userEmail
+	mockDB.SavedIP = clientIP
 	return nil
 }
 

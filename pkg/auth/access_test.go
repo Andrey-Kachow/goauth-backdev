@@ -74,6 +74,27 @@ func TestGeneratePair_SaveError(t *testing.T) {
 	assert.Empty(t, refreshToken, "Expected refresh token to be empty due to error")
 }
 
+func TestGeneratePair_IPChange(t *testing.T) {
+	mockDB := &MockTokenDB{
+		ShouldError: false,
+		SavedIP:     sampleClientIP,
+	}
+	mockNotificationService := &MockNotificationService{}
+	MockAppContext.TokenDB = mockDB
+	MockAppContext.NotificationService = mockNotificationService
+
+	accessToken, refreshToken, err := GeneratePair(sampleUserGUID, sampleNewClientIP, sampleUserEmail, MockAppContext)
+
+	assert.True(t, mockNotificationService.EmailSent)
+
+	assert.NoError(t, err, "Expected no error from GeneratePair despite the new IP address")
+	assert.NotEmpty(t, accessToken, "Expected access token to be generated despite the new IP address")
+	assert.NotEmpty(t, refreshToken, "Expected refresh token to be generated despite the new IP address")
+
+	assert.Equal(t, sampleUserGUID, mockDB.SavedUserGUID, "Expected user GUID to match despite the new IP address")
+	assert.NotEmpty(t, mockDB.SavedHashedTokenHash, "Expected hashed refresh token to be saved in the database despite the new IP address")
+}
+
 // TestGenerateAccessToken tests that GenerateAccessToken generates a valid token
 func TestGenerateAccessToken(t *testing.T) {
 	accessTokenString, err := GenerateAccessToken(sampleUserGUID, sampleClientIP, sampleUserEmail)
