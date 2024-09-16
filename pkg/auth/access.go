@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
-	"github.com/Andrey-Kachow/goauth-backdev/pkg/msg"
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -15,7 +14,15 @@ const AccessSecretKey = "accessSecretKey"
 const AccessTokenExiparionInMinutes = 15
 
 // GeneratePair generates and returns access token and refresh token plus any error
-func GeneratePair(userGUID string, clientIP string, userEmail string, tokenDB db.TokenDB) (string, string, error) {
+func GeneratePair(userGUID string, clientIP string, userEmail string, appContext app.ApplicationContext) (string, string, error) {
+	userData, err := appContext.TokenDB.FetchUserData(userGUID)
+	if err == nil {
+		fmt.Printf("Comparing client IPs: %s and %s", userData.RecentIP, clientIP)
+		if userData.RecentIP != clientIP {
+			appContext.NotificationService.SendWarning(userEmail, clientIP)
+		}
+	}
+
 	accessToken, err := GenerateAccessToken(userGUID, clientIP, userEmail)
 	if err != nil {
 		return "", "", err
@@ -26,13 +33,14 @@ func GeneratePair(userGUID string, clientIP string, userEmail string, tokenDB db
 		return "", "", err
 	}
 
-	err = tokenDB.SaveUserData(userGUID, userEmail, hashedRefreshToken)
+	err = appContext.TokenDB.SaveUserData(userGUID, userEmail, clientIP, hashedRefreshToken)
 	if err != nil {
 		return "", "", err
 	}
 	return accessToken, refreshToken, nil
 }
 
+// GenerateAccessToken generates new access
 func GenerateAccessToken(userGUID string, clientIP string, userEmail string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
 		"guid":  userGUID,
@@ -44,7 +52,7 @@ func GenerateAccessToken(userGUID string, clientIP string, userEmail string) (st
 }
 
 // ValidateAccessTokenClaims checks the guid and cliend IP and sends notification email in case when IP has changed
-func ValidateAccessTokenClaims(accessToken string, currentClientIP string, providedUserEmail string, notificaitonService msg.NotificationService) (string, string, error) {
+func ValidateAccessTokenClaims(accessToken string, currentClientIP string, providedUserEmail string) (string, string, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		return []byte(AccessSecretKey), nil
 	})
@@ -68,15 +76,6 @@ func ValidateAccessTokenClaims(accessToken string, currentClientIP string, provi
 	userGUID, ok := claims["guid"].(string)
 	if !ok {
 		return "", "", errors.New("user GUID not found in token")
-	}
-	tokenClientIP, ok := claims["ip"].(string)
-	if !ok {
-		return "", "", errors.New("client IP not found in token")
-	}
-
-	fmt.Printf("Comparing client IPs: %s and %s", tokenClientIP, currentClientIP)
-	if tokenClientIP != currentClientIP {
-		notificaitonService.SendWarning(userEmail, currentClientIP)
 	}
 	return userGUID, userEmail, nil
 }

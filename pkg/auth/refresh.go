@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -45,7 +45,7 @@ func GenerateRefreshToken(userGUID string, userEmail string) (string, string, er
 }
 
 // ValidateRefreshTokenAndPassword returns validated userGUID and email
-func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (string, string, error) {
+func ValidateRefreshTokenAndPassword(refreshToken string, appContext app.ApplicationContext) (string, string, error) {
 	token, err := jwt.Parse(
 		refreshToken,
 		func(token *jwt.Token) (interface{}, error) {
@@ -71,14 +71,14 @@ func ValidateRefreshTokenAndPassword(refreshToken string, tokenDB db.TokenDB) (s
 		return "", "", errors.New("user email not found in the refresh token")
 	}
 
-	hashedTokenFromDB, err := tokenDB.FetchHashedRefreshTokenFromDB(userGUID)
+	userData, err := appContext.TokenDB.FetchUserData(userGUID)
 	if err != nil {
 		return "", "", err
 	}
 
 	passwordFromRefreshToken := createPasswordFromRefreshToken(refreshToken)
 
-	err = bcrypt.CompareHashAndPassword([]byte(hashedTokenFromDB), []byte(passwordFromRefreshToken))
+	err = bcrypt.CompareHashAndPassword([]byte(userData.RefreshTokenHash), []byte(passwordFromRefreshToken))
 	if err != nil {
 		return "", "", err
 	}

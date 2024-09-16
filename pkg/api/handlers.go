@@ -5,13 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/auth"
-	"github.com/Andrey-Kachow/goauth-backdev/pkg/db"
-	"github.com/Andrey-Kachow/goauth-backdev/pkg/msg"
 )
-
-var tokenDatabase = db.ProvideApplicationTokenDB()
-var emailNotificationService = msg.ProvideNotificationService()
 
 type loginRequestBody struct {
 	GUID  string `json:"guid"`
@@ -55,12 +51,12 @@ func AccessHandler(writer http.ResponseWriter, request *http.Request) {
 	userEmail := requestBody.Email
 	clientIP := ipAddrFromRequest(request)
 
-	accessToken, refreshToken, err := auth.GeneratePair(userGUID, clientIP, userEmail, tokenDatabase)
+	accessToken, refreshToken, err := auth.GeneratePair(userGUID, clientIP, userEmail, app.Context())
 	if exitWithError(err, http.StatusBadRequest, writer) {
 		return
 	}
 
-	_, _, err = auth.ValidateAccessTokenClaims(accessToken, clientIP, userEmail, emailNotificationService)
+	_, _, err = auth.ValidateAccessTokenClaims(accessToken, clientIP, userEmail)
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}
@@ -84,7 +80,7 @@ func RefreshHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	refreshToken := requestBody.RefreshToken
 
-	userGUID, userEmail, err := auth.ValidateRefreshTokenAndPassword(refreshToken, tokenDatabase)
+	userGUID, userEmail, err := auth.ValidateRefreshTokenAndPassword(refreshToken, app.Context())
 	if exitWithError(err, http.StatusUnauthorized, writer) {
 		return
 	}

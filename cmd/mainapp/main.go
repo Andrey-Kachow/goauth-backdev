@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/api"
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 )
 
 func sampleClientHandler(writer http.ResponseWriter, request *http.Request) {
@@ -22,6 +23,7 @@ func sampleClientHandler(writer http.ResponseWriter, request *http.Request) {
 
 func main() {
 	fmt.Println("Starting the app")
+	app.Init()
 	http.HandleFunc("/", sampleClientHandler)
 	http.HandleFunc("/api/access", api.AccessHandler)
 	http.HandleFunc("/api/refresh", api.RefreshHandler)

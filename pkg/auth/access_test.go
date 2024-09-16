@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,43 +28,31 @@ func (m *MockNotificationService) SendWarning(userEmail string, clientIP string)
 	return nil
 }
 
-func (m *MockNotificationService) GetEmailAddressFromGUID(userGUID string) (string, error) {
-	return "", nil
+var MockAppContext = app.ApplicationContext{
+	NotificationService: &MockNotificationService{},
+	TokenDB: &MockTokenDB{
+		ShouldError: false,
+	},
 }
 
 // Test function for ValidateAccessTokenClaims
-func TestValidateAccessTokenClaims_IPChange(t *testing.T) {
+func TestValidateAccessTokenClaims(t *testing.T) {
 	accessToken, err := GenerateAccessToken(sampleUserGUID, sampleClientIP, sampleUserEmail)
 	assert.NoError(t, err)
 
-	mockNotificationService := &MockNotificationService{}
-	returnedGUID, _, err := ValidateAccessTokenClaims(accessToken, sampleNewClientIP, sampleUserEmail, mockNotificationService)
+	returnedGUID, _, err := ValidateAccessTokenClaims(accessToken, sampleNewClientIP, sampleUserEmail)
 
 	assert.NoError(t, err)
 	assert.Equal(t, sampleUserGUID, returnedGUID, "Expected GUID to match")
-
-	assert.True(t, mockNotificationService.EmailSent, "Expected email to be sent due to IP change")
-	assert.Equal(t, sampleUserEmail, mockNotificationService.SentUserEmail, "Expected email to be sent to the correct user")
-	assert.Equal(t, sampleNewClientIP, mockNotificationService.SentClientIP, "Expected email to contain the new client IP")
-}
-
-func TestValidateAccessTokenClaims_NoIPChange(t *testing.T) {
-	accessToken, err := GenerateAccessToken(sampleUserGUID, sampleClientIP, sampleUserEmail)
-	assert.NoError(t, err)
-
-	mockNotificationService := &MockNotificationService{}
-	returnedGUID, _, err := ValidateAccessTokenClaims(accessToken, sampleClientIP, sampleUserEmail, mockNotificationService)
-
-	assert.NoError(t, err)
-	assert.Equal(t, sampleUserGUID, returnedGUID, "Expected GUID to match")
-	assert.False(t, mockNotificationService.EmailSent, "Expected no email to be sent because the IP hasn't changed")
 }
 
 func TestGeneratePair(t *testing.T) {
 	mockDB := &MockTokenDB{
 		ShouldError: false,
 	}
-	accessToken, refreshToken, err := GeneratePair(sampleUserGUID, sampleClientIP, sampleUserEmail, mockDB)
+	MockAppContext.TokenDB = mockDB
+
+	accessToken, refreshToken, err := GeneratePair(sampleUserGUID, sampleClientIP, sampleUserEmail, MockAppContext)
 
 	assert.NoError(t, err, "Expected no error from GeneratePair")
 	assert.NotEmpty(t, accessToken, "Expected access token to be generated")
@@ -74,11 +63,11 @@ func TestGeneratePair(t *testing.T) {
 }
 
 func TestGeneratePair_SaveError(t *testing.T) {
-	mockDB := &MockTokenDB{
+	MockAppContext.TokenDB = &MockTokenDB{
 		ShouldError: true,
 	}
 
-	accessToken, refreshToken, err := GeneratePair(sampleUserGUID, sampleClientIP, sampleUserEmail, mockDB)
+	accessToken, refreshToken, err := GeneratePair(sampleUserGUID, sampleClientIP, sampleUserEmail, MockAppContext)
 
 	assert.Error(t, err, "Expected an error due to database save failure")
 	assert.Empty(t, accessToken, "Expected access token to be empty due to error")

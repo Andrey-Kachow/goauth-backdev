@@ -2,35 +2,31 @@ package db
 
 import "fmt"
 
-type userInfo struct {
-	GUID         string
-	Email        string
-	RefreshToken string
-}
-
 type InMemoryTokenDB struct {
-	rows map[string]userInfo
+	rows map[string]UserData
 }
 
 func CreateNewInMemoryTokenDB() TokenDB {
 	return &InMemoryTokenDB{
-		rows: make(map[string]userInfo),
+		rows: make(map[string]UserData),
 	}
 }
 
-func (tdb *InMemoryTokenDB) SaveUserData(userGUID string, userEmail string, refreshTokenHash string) error {
+func (tdb *InMemoryTokenDB) SaveUserData(userGUID string, userEmail string, clientIP string, refreshTokenHash string) error {
 	tdb.rows[userGUID] =
-		userInfo{
-			GUID:         userGUID,
-			Email:        userEmail,
-			RefreshToken: refreshTokenHash,
+		UserData{
+			GUID:             userGUID,
+			Email:            userEmail,
+			RecentIP:         clientIP,
+			RefreshTokenHash: refreshTokenHash,
 		}
 	return nil
 }
 
-func (tdb *InMemoryTokenDB) FetchHashedRefreshTokenFromDB(userGUID string) (string, error) {
-	if userInfo, exists := tdb.rows[userGUID]; exists {
-		return userInfo.RefreshToken, nil
+func (tdb *InMemoryTokenDB) FetchUserData(userGUID string) (UserData, error) {
+	userData, exists := tdb.rows[userGUID]
+	if exists {
+		return userData, nil
 	}
-	return "", fmt.Errorf("user with GUID %s not found", userGUID)
+	return UserData{}, fmt.Errorf("user with GUID %s not found", userGUID)
 }
