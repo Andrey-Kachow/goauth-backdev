@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/app"
 	"github.com/Andrey-Kachow/goauth-backdev/pkg/auth"
@@ -30,9 +32,14 @@ func exitWithError(err error, status int, writer http.ResponseWriter) bool {
 }
 
 func ipAddrFromRequest(request *http.Request) string {
-	return request.RemoteAddr
-	// ipAndPort := request.RemoteAddr
-	// return strings.Split(ipAndPort, ":")[0]
+	if os.Getenv("GOAUTH_BACKDEV_MODE") == "development" {
+		//
+		// Using string of type "ip:port" instead of Ip allows simplier testing IP change from localhost.
+		// Sending request from other device will be sent from different port of the Wi-fi router.
+		//
+		return request.RemoteAddr
+	}
+	return strings.Split(request.RemoteAddr, ":")[0]
 }
 
 func AccessHandler(writer http.ResponseWriter, request *http.Request) {

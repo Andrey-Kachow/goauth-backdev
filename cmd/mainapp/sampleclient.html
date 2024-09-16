@@ -28,8 +28,9 @@
     }
 
     async function accessButtonClick() {
-      const guid = document.getElementById("guid").textContent
-      const email = document.getElementById("email").textContent
+      const guid = document.getElementById("guid").value
+      const email = document.getElementById("email").value
+      alert("Sending " + guid + " and " + email)
       response = await fetch("/api/access", {
         method: "POST",
         body: JSON.stringify({
