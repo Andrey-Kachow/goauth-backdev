@@ -65,7 +65,8 @@ func ProvideNotificationService() NotificationService {
 		"GOAUTH_BACKDEV_EMAIL_PASSWORD",
 	}
 	for _, requiredEnvVar := range requiredEnvVars {
-		if os.Getenv(requiredEnvVar) == "" {
+		envVar := os.Getenv(requiredEnvVar)
+		if envVar == "" || envVar == "CHANGEME" {
 			fmt.Printf("Environment variable %s is not set. Email notifications disabled\n", requiredEnvVar)
 			return &DummyNotificationService{}
 		}
